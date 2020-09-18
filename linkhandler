@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if [[ "${#1}" -gt 30 ]];
+then
+link="${1:0:20}"..."${1: -7}"
+else
+link="$1"
+fi
+
+echo $link
+
+x=$(echo -e "mpv\nfeh\nrtv\nfirefox\nvimb\nw3m\nwget\nTV\nStereo" | dmenu -i -p "Where do we go from here '$link'?")
+case "$x" in
+		mpv) mpv "$1" 2&>/dev/null & disown ;;
+		feh) feh "$1" 2&>/dev/null & disown ;;
+		rtv) rtv "$1" ;;
+		firefox) firefox "$1" ;;
+		vimb) vimb "$1" & disown ;;
+		w3m) readable "$1" | w3m -T text/html & ;;
+		wget) wget "$1" 2&>/dev/null & disown ;;
+		tv) ytcast "$1" ;;
+		stereo) castnow --address 192.168.1.195 --quiet - "$1" ;;
+esac
+
