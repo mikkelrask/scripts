@@ -1,1 +1,12 @@
-/home/raske/bin/pomodoro
+#!/bin/sh
+notify-send "Pomodoro started." "Work concentrated for 25 minutes."
+
+while true
+do
+	sleep 25m
+	notify-send "Issa time" "Get some rest"
+	mpv --quiet ~/bin/pomodoro.mp3
+	sleep 5m
+	notify-send "Get to it!" "Time to work!"
+	mpv --quiet ~/bin/pomodoro.mp3
+done
