@@ -7,10 +7,10 @@ do
 	cowsay "25 minutes"
 	sleep 25m
 	notify-send "Issa time" "Get some rest"
-	mpv --quiet ~/bin/pomodoro.mp3
+	mpv --quiet pomodoro.mp3
   clear
 	cowsay "Take a break!"
 	sleep 5m
 	notify-send "Get to it!" "Time to work!"
-	mpv --quiet ~/bin/pomodoro.mp3
+	mpv --quiet pomodoro.mp3
 done
