@@ -1,3 +1,2 @@
 #!/bin/sh
-. /home/raske/.cache/wal/colors.sh 
-[ $(echo -e "No\nYes" | dmenu -nb "$color0" -nf "$color7" -sb "$color0" -sf "$color1" -i -p "$1") == "Yes" ] && $2
+[ $(echo -e "No\nYes" | dmenu -i -p "$1") == "Yes" ] && $2
