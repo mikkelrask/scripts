@@ -1,0 +1,38 @@
+#!/bin/bash
+password=$1
+if [ -z "$password" ] 
+then
+	clear
+	echo "Password to lookup:"
+	read password
+fi
+filename="pwned.hash"
+
+getHash(){
+	hash=$(echo -n "$password" | libressl-openssl sha1)
+	hash=${hash:9}
+	range=${hash:0:5}
+	remainder=${hash:6}
+	apiRequest
+}
+
+apiRequest(){
+	curl -s https://api.pwnedpasswords.com/range/$range > $HOME/$filename
+	results=$(grep -i $remainder $HOME/$filename)
+	noTimes="${results:36}"
+	if [ -z "$results" ]
+	then
+		clear
+		echo "You seem safe.... .... for now"
+	else
+		clear
+		echo "Oof...!"
+		echo "The password you input has been leaked!"
+		echo "Times found: $noTimes"
+		echo "You might wan't to change that!"
+	fi
+	rm $HOME/$filename
+}
+
+
+getHash
