@@ -8,4 +8,4 @@ fi
 PASSWORD=$(openssl rand -base64 $LENGTH)
 echo ${PASSWORD%??} | xclip -selection c
 notify-send "Password Generator" "Password copied to clipboard."
-echo "- Password copied to clipboard."
+echo "- A new random password copied to clipboard."
