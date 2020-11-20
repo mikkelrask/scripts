@@ -3,10 +3,11 @@ password=$1
 if [ -z "$password" ] 
 then
 	clear
+	printf "HAVE I BEEN PWNED LOOKUP\n--------------------------------\n\n"
 	echo "Password to lookup:"
 	read password
 fi
-filename="pwned.hash"
+filename="$HOME/.pwned.hash"
 
 getHash(){
 	hash=$(echo -n "$password" | libressl-openssl sha1)
@@ -16,20 +17,30 @@ getHash(){
 }
 
 apiRequest(){
-	results=$(curl -s https://api.pwnedpasswords.com/range/$range > $HOME/$filename && grep -i $remainder $HOME/$filename)
+	apiUrl="https://api.pwnedpasswords.com/range/$range"
+	results=$(curl -s $apiUrl > $filename && grep -i $remainder $filename)
 	noTimes="${results:36}"
 	if [ -z "$results" ]
 	then
 		clear
-		echo "You seem safe.... .... for now"
+		printf "HAVE I BEEN PWNED LOOKUP\n--------------------------------\n\n"
+		printf "You seem safe.... .... for now"
 	else
 		clear
-		printf "Oof...!\nThe password you input has been leaked!\nTimes found: $noTimes\nYou might want to change that!"
+		printf "HAVE I BEEN PWNED LOOKUP\n--------------------------------\n\n"
+		printf "Oof...!\nThe password you input has been leaked!\n\nTimes found: $noTimes\nYou might want to change that!\n\n"
+		newPassword
+		echo "A new random password has been copied to your clip board."
 	fi
 }
 
 clean(){
-	rm $HOME/$filename
+	rm $filename
+}
+
+newPassword(){
+	PASSWORD=$(openssl rand -base64 32)
+  echo ${PASSWORD%??} | xclip -selection c
 }
 getHash
 apiRequest
