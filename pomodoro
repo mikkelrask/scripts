@@ -1,16 +1,16 @@
 #!/bin/sh
 notify-send "Pomodoro started." "Work concentrated for 25 minutes."
-
+message=$1
 while true
 do
 	clear
-	cowsay "25 minutes"
-	sleep 25m
+	cowsay "${message:-25 minutes}"
+	sleep 2
 	notify-send "Issa time" "Get some rest"
-	mpv --quiet pomodoro.mp3
+	mpv --quiet $PWD/pomodoro.mp3
   clear
 	cowsay "Take a break!"
 	sleep 5m
 	notify-send "Get to it!" "Time to work!"
-	mpv --quiet pomodoro.mp3
+	mpv --quiet $PWD/pomodoro.mp3
 done

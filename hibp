@@ -20,7 +20,7 @@ getHash(){
 
 apiRequest(){
 	apiUrl="https://api.pwnedpasswords.com/range/$range"
-	filename="$HOME/.pwned.hash"
+	filename="$PWD/.pwned.hash"
 	results=$(curl -s $apiUrl > $filename && grep -i $remainder $filename)
 	noTimes="${results:36}"
 	if [ -z "$results" ]
