@@ -31,7 +31,6 @@ apiRequest(){
 		printf "$(figlet "YOU HAVE BEEN PWNED")\n--------------------------------\n\n"
 		printf "Oof...!\nThe password you input has been leaked!\n\nTimes found: $noTimes\nYou might want to change that!\n\n"
 		newPassword
-		echo "A new random password has been copied to your clip board."
 	fi
 }
 
@@ -42,6 +41,7 @@ clean(){
 newPassword(){
 	PASSWORD=$(openssl rand -base64 32)
   echo ${PASSWORD%??} | xclip -selection c
+	echo "A new random password has been copied to your clip board."
 }
 getHash
 apiRequest
