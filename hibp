@@ -1,14 +1,15 @@
 #!/bin/bash
 password=$1
-if [ -z "$password" ] 
-then
-	clear
-	printf "$(figlet "HAVE I BEEN PWNED")\n--------------------------------\n\n"
-	echo "Password to lookup:"
-	
-	read password
+
+getPassword(){
+	if [ -z "$password" ] 
+	then
+		clear
+		printf "$(figlet "HAVE I BEEN PWNED")\n--------------------------------\n\n"
+		echo "Password to lookup:"
+		read password
 fi
-filename="$HOME/.pwned.hash"
+}
 
 getHash(){
 	hash=$(echo -n "$password" | libressl-openssl sha1)
@@ -19,6 +20,7 @@ getHash(){
 
 apiRequest(){
 	apiUrl="https://api.pwnedpasswords.com/range/$range"
+	filename="$HOME/.pwned.hash"
 	results=$(curl -s $apiUrl > $filename && grep -i $remainder $filename)
 	noTimes="${results:36}"
 	if [ -z "$results" ]
@@ -40,9 +42,10 @@ clean(){
 
 newPassword(){
 	PASSWORD=$(openssl rand -base64 32)
-  echo ${PASSWORD%??} | xclip -selection c
+	echo ${PASSWORD%??} | xclip -selection c
 	echo "A new random password has been copied to your clip board."
 }
+getPassword
 getHash
 apiRequest
 clean
