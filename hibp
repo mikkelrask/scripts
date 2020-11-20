@@ -12,7 +12,7 @@ fi
 }
 
 getHash(){
-	hash=$(echo -n "$password" | libressl-openssl sha1)
+	hash=$(echo -n "$password" | openssl sha1)
 	hash=${hash:9}
 	range=${hash:0:5}
 	remainder=${hash:6}
