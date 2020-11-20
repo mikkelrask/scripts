@@ -3,8 +3,9 @@ password=$1
 if [ -z "$password" ] 
 then
 	clear
-	printf "HAVE I BEEN PWNED LOOKUP\n--------------------------------\n\n"
+	printf "$(figlet "HAVE I BEEN PWNED")\n--------------------------------\n\n"
 	echo "Password to lookup:"
+	
 	read password
 fi
 filename="$HOME/.pwned.hash"
@@ -23,11 +24,11 @@ apiRequest(){
 	if [ -z "$results" ]
 	then
 		clear
-		printf "HAVE I BEEN PWNED LOOKUP\n--------------------------------\n\n"
-		printf "You seem safe.... .... for now"
+		printf "$(figlet "NOT PWNED")\n--------------------------------\n\n"
+		printf "Keep up the good work!"
 	else
 		clear
-		printf "HAVE I BEEN PWNED LOOKUP\n--------------------------------\n\n"
+		printf "$(figlet "YOU HAVE BEEN PWNED")\n--------------------------------\n\n"
 		printf "Oof...!\nThe password you input has been leaked!\n\nTimes found: $noTimes\nYou might want to change that!\n\n"
 		newPassword
 		echo "A new random password has been copied to your clip board."
