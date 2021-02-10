@@ -1,14 +1,16 @@
+#!/usr/bin/env python
 """
 This script will open dba.dk in a headless Chrome browser, and search the
 products within a certain pricerange, saved in an excel sheet or CSV file.
 """
 
-import time
-import pickle
-import csv
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.keys import Keys
+import time # We use time to do waits between pages
+import pickle # Pickle is a simple database, to store the number of ads
+import csv # CSV is the fileformat of the product sheet.
+from notify import notification # we use notify to send notifications to the user
+from selenium import webdriver # Selenium is what opens up the browser, and does the stuff
+from selenium.webdriver.chrome.options import Options # Options are passed to the Chrome browser
+from selenium.webdriver.common.keys import Keys # Keys is so we can send keys to inputs.
 
 # Chrome settings
 chrome_options = Options()
@@ -26,16 +28,21 @@ PRODUCT = ""
 driver.implicitly_wait(5)
 
 def den_blaa_avis():
+    """
+    Search dba.dk for instances of each line in the CSV file.
+    If we got any hits, show a link to the user
+    """
     def remove(string): #remove spaces from PRODUCT to create individual .dat filename
-        return string.replace(" ","") 
+        return string.replace(" ","")
 
     # See if we have any data on the given product else db antal is 0
     try:
         db_antal = pickle.load(open(remove(PRODUCT) + ".dat", "rb"))
     except:
         db_antal = 0
-    driver.get(DBA)
-    time.sleep(2)
+
+    driver.get(DBA) # Get DBA.dk in the browser
+    time.sleep(2) # Wait just a sec
     search = driver.find_element_by_id("searchField")
     print("-------------------------------")
 
@@ -60,10 +67,12 @@ def den_blaa_avis():
         antal = [int(i) for i in antal_annoncer_string.split() if i.isdigit()] # Get only the integer
         diff = int(antal[0]) - db_antal
         if diff > 0:
+            string = str(antal[0]) + ' annoncer fundet. ' + str(diff) + '+ ift forrige søgning.'
             print(str(antal[0]) + ' annoncer fundet. ' + str(diff) + '+ ift forrige søgning.')
             print("URL: " + driver.current_url)
             print("-------------------------------")
             pickle.dump(int(antal[0]), open(remove(PRODUCT) + ".dat", "wb")) # Dump the new number of items into the database
+            notification(string,title=PRODUCT)
         elif diff == 0:
             print ("Ingen nye annoncer.")
             print("-------------------------------")
