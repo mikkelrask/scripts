@@ -16,24 +16,24 @@ from selenium.webdriver.common.keys import Keys # Keys is so we can send keys to
 chrome_options = Options()
 chrome_options.add_argument("--no-sandbox") # linux only
 #chrome_options.add_argument("--incognito")
-chrome_options.add_argument("--headless")
+#chrome_options.add_argument("--headless")
 
 #Initialize the browser and declare where to go
 driver = webdriver.Chrome(options=chrome_options)
 DBA = "https://dba.dk"
-GG = "https://guloggratis.dk"
+GG = "https://www.guloggratis.dk/s/q-"
 PRICE = 0
 MAXPRICE = 0
 PRODUCT = ""
-driver.implicitly_wait(5)
+def remove(string): #remove spaces from PRODUCT to create individual .dat filename
+    return string.replace(" ","")
 
 def den_blaa_avis():
     """
     Search dba.dk for instances of each line in the CSV file.
     If we got any hits, show a link to the user
     """
-    def remove(string): #remove spaces from PRODUCT to create individual .dat filename
-        return string.replace(" ","")
+    driver.implicitly_wait(5)
 
     # See if we have any data on the given product else db antal is 0
     try:
@@ -43,10 +43,14 @@ def den_blaa_avis():
 
     driver.get(DBA) # Get DBA.dk in the browser
     time.sleep(2) # Wait just a sec
+
+    try:
+        driver.find_element_by_id("onetrust-reject-all-handler").click()
+    except:
+        COOKIE = "Cookie"
     search = driver.find_element_by_id("searchField")
     print("-------------------------------")
 
-    print("Produkt: " + PRODUCT)
     search.send_keys(PRODUCT) # send search term / product name
     search.send_keys(Keys.RETURN)
     time.sleep(2)
@@ -61,7 +65,6 @@ def den_blaa_avis():
     time.sleep(2)
 
     try:
-        #if driver.find_element_by_xpath("//td[contains(text(),'annoncer')]"):
         antal_annoncer_string = driver.find_element_by_xpath("//td[contains(text(),\
                     'annoncer')]").get_attribute("innerHTML").strip()
         antal = [int(i) for i in antal_annoncer_string.split() if i.isdigit()] # Get only the integer
@@ -85,23 +88,34 @@ def den_blaa_avis():
 
 # Check the same on GulGratis
 def gul_og_gratis():
-    driver.get(GG)
+    # See if we have any data on the given product else db antal is 0
+    try:
+        db_antal = pickle.load(open(remove(PRODUCT) + ".dat", "rb"))
+    except:
+        db_antal = 0
+
+    def plus(string): #remove spaces from PRODUCT to create individual .dat filename
+        return string.replace(" ","+")
+    
+    QUERY = plus(PRODUCT)
+    GGURL = GG+QUERY+"?price="+PRICE+"-"+MAXPRICE
+    driver.get(GGURL)
     time.sleep(2)
-    search = driver.find_element_by_id("searchField")
-    search.send_keys(PRODUCT)
-    search.send_keys(Keys.RETURN)
-    time.sleep(2)
-    driver.find_element_by_xpath("//h4[contains(text(), 'Pris')]").click()
-    print("Searching...")
-    price = driver.find_element_by_class_name("rangeFrom")
-    price.send_keys(PRICE)
-    price = driver.find_element_by_class_name("rangeTo")
-    price.send_keys(MAXPRICE)
-    price.send_keys(Keys.RETURN)
-    time.sleep(2)
-    print("Produkt: " + PRODUCT)
-    print(driver.find_element_by_xpath("//td[contains(text(),'annoncer')]").get_attribute("innerHTML").strip() + " i prisklassen " + str(PRICE) + " - " + str(MAXPRICE))
-    print("URL:" + driver.current_url)
+    try:
+        driver.find_element_by_id("onetrust-accept-btn-handler").click()
+    except:
+        COOKIE = True 
+    time.sleep(1)
+    GGANTAL = driver.find_element_by_xpath("//h1[contains(text(),'Søgeresultat for')]/following-sibling::span").get_attribute("innerHTML")
+    diff = int(GGANTAL) - db_antal 
+    if diff > 0:
+        print(GGANTAL + " fundet. " + str(diff) + " ifh. forrige søgning")
+        pickle.dump(int(GGANTAL), open(remove(PRODUCT) + ".dat"), "wb")
+    elif diff == 0:
+        print("Ingen nye annoncer.")
+    else:
+        print(str(diff) + " ift forrige søgning.")
+        print("URL:" + driver.current_url)
 
 filename = "search_agent.csv"
 
@@ -112,4 +126,6 @@ with open(filename, "r") as csvfile:
         PRODUCT = row[0]
         PRICE = row[1]
         MAXPRICE = row[2]
+        print("Produkt: " + PRODUCT)
         den_blaa_avis()
+        gul_og_gratis()
