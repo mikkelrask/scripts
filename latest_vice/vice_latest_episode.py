@@ -5,8 +5,6 @@ from selenium import webdriver # Selenium is what opens up the browser, and does
 from selenium.webdriver.chrome.options import Options # Options are passed to the Chrome browser
 from selenium.common.exceptions import NoSuchElementException
 
-# Rich console for extra flavor
-
 # Chrome settings
 chrome_options = Options()
 chrome_options.add_argument("--no-sandbox") # linux only
