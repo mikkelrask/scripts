@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-This webscraper opens a headless chrome window and seaches for line in the
-tingfinder.csv file on the danish trading platforms dba.dk, gulgratis.dk and
-auction house Lauritz.com (experimental)
-"""
-
 import pickle # Pickle is a simple database, to store the number of ads
-import traceback
 from selenium import webdriver # Selenium is what opens up the browser, and does the stuff
 from selenium.webdriver.chrome.options import Options # Options are passed to the Chrome browser
 from selenium.common.exceptions import NoSuchElementException
@@ -35,8 +28,6 @@ def get_latest_url():
         print("No saved URLS. Starting from scratch...")
         db_url = ""
         print(error)
-        traceback_str = traceback.format_exc()
-        print(traceback_str)
 
     driver.get(url)
     driver.implicitly_wait(5)
