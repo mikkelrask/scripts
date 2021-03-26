@@ -5,6 +5,7 @@ products within a certain pricerange, saved in an excel sheet or CSV file.
 """
 
 import time # We use time to do waits between pages
+import datetime
 import pickle # Pickle is a simple database, to store the number of ads
 import csv # CSV is the fileformat of the product sheet.
 from notify import notification # we use notify to send notifications to the user
@@ -25,122 +26,232 @@ GG = "https://www.guloggratis.dk/s/q-"
 PRICE = 0
 MAXPRICE = 0
 PRODUCT = ""
-def remove(string): #remove spaces from PRODUCT to create individual .dat filename
+cookie = False
+
+def remove(string):
+    """
+    remove spaces from PRODUCT to create individual .dat filename
+    """
     return string.replace(" ","")
+
+def plus(string):
+    """
+    replace spaces from PRODUCT to filename
+    """
+    return string.replace(" ","+")
 
 def den_blaa_avis():
     """
     Search dba.dk for instances of each line in the CSV file.
-    If we got any hits, show a link to the user
+    If we got any hits, we print it to std.out
     """
-    driver.implicitly_wait(5)
 
-    # See if we have any data on the given product else db antal is 0
     try:
-        db_antal = pickle.load(open("/home/raske/Scripts/dba/data/" + remove(PRODUCT) + "_dba.dat", "rb"))
+        # See if we have any data on the given product if not db antal = 0
+        db_antal = pickle.load(open("/home/raske/Scripts/dba/data/" + \
+                                    remove(PRODUCT) + "_dba.dat", "rb"))
     except:
         db_antal = 0
 
-    driver.get(DBA) # Get DBA.dk in the browser
-    time.sleep(2) # Wait just a sec
+    driver.get(DBA) # Open DBA.dk in the chrome browser
+    driver.implicitly_wait(5)
 
     try:
+        # Try to click the reject cookies button if it's there.
         driver.find_element_by_id("onetrust-reject-all-handler").click()
     except:
-        COOKIE = "Cookie"
+        cookie = True
+
     search = driver.find_element_by_id("searchField")
 
     search.send_keys(PRODUCT) # send search term / product name
     search.send_keys(Keys.RETURN)
-    time.sleep(2)
+    time.sleep(3)
 
     driver.find_element_by_xpath("//h4[contains(text(), 'Pris')]").click() # Set our price wishes
-    price = driver.find_element_by_class_name("rangeFrom") # Min
+    price = driver.find_element_by_class_name("rangeFrom") # Min value
     price.send_keys(PRICE)
-    price = driver.find_element_by_class_name("rangeTo") # Max
+    price = driver.find_element_by_class_name("rangeTo") # Max value
     price.send_keys(MAXPRICE)
     price.send_keys(Keys.RETURN)
-    time.sleep(2)
+    time.sleep(3)
 
     try:
+        # if the td containing "annoncer" exists, it means we have hits on our search.
         antal_annoncer_string = driver.find_element_by_xpath("//td[contains(text(),\
                     'annoncer')]").get_attribute("innerHTML").strip()
-        antal = [int(i) for i in antal_annoncer_string.split() if i.isdigit()] # Get only the integer
-        diff = int(antal[0]) - db_antal
+        # Extract the integer from the text
+        antal = [int(i) for i in antal_annoncer_string.split() if i.isdigit()]
+        diff = int(antal[0]) - db_antal # Calculate the difference, if any.
         if diff > 0:
-            string = str(antal[0]) + ' annoncer fundet på DBA.dk. ' + str(diff) + '+ ift forrige søgning.'
+            # If our diff is a positive number:
+            string = str(antal[0]) + ' annoncer fundet på DBA.dk. ' + \
+                                    str(diff) + '+ ift forrige søgning.'
             print(str(antal[0]) + ' annoncer fundet. ' + str(diff) + '+ ift forrige søgning.')
             print("URL: " + driver.current_url)
-            pickle.dump(int(antal[0]), open("/home/raske/Scripts/dba/data/" + remove(PRODUCT) + "_dba.dat", "wb")) # Dump the new number of items into the database
-            notification(string,title=PRODUCT)
+            # Dump the new number of items into the database
+            pickle.dump(int(antal[0]), open("/home/raske/Scripts/dba/data/" + \
+                                            remove(PRODUCT) + "_dba.dat", "wb"))
+            notification(string,title=PRODUCT) # Send notification
         elif diff == 0:
+            # If the number of hits is the same as last search:
             print("Ingen nye annoncer.")
             print("URL: " + driver.current_url)
         else:
-            print(str(ANTAL) + " fundet. " + str(diff) + " færre end sidste søgning")
+            # If there are fewer hits than earlier:
+            print(str(antal) + " fundet. " + str(diff) + " færre end sidste søgning")
             print("URL: " + driver.current_url)
-            pickle.dump(int(antal[0]), open("/home/raske/Scripts/dba/data/" + remove(PRODUCT) + "_dba.dat", "wb")) # Dump the new number of items into the database
+            # Dump the new number of items into the database
+            pickle.dump(int(antal[0]), open("/home/raske/Scripts/dba/data/" + \
+                                            remove(PRODUCT) + "_dba.dat", "wb"))
     except:
         print(PRODUCT + " ikke fundet i prisklassen.")
 
 # Check the same on GulGratis
 def gul_og_gratis():
-    # See if we have any data on the given product else db antal is 0
-    try:
-        db_antal = pickle.load(open("/home/raske/Scripts/dba/data/" + remove(PRODUCT) + "_gg.dat", "rb"))
+    """
+    Check gulgratis.dk for all products.
+    """
+    try: # See if we have any data on the given product else db antal is 0
+        db_antal = pickle.load(open("/home/raske/Scripts/dba/data/" + \
+                                    remove(PRODUCT) + "_gg.dat", "rb"))
     except:
         db_antal = 0
 
-    def plus(string): #remove spaces from PRODUCT to create individual .dat filename
-        return string.replace(" ","+")
-    
-    QUERY = plus(PRODUCT)
-    GGURL = GG+QUERY+"?price="+PRICE+"-"+MAXPRICE
-    driver.get(GGURL)
-    time.sleep(2)
+    # On this page we use the search query directly in the URL we're fetching.
+    query = plus(PRODUCT)
+    gg_url = GG+query+"?price="+PRICE+"-"+MAXPRICE
+    driver.get(gg_url)
+    driver.implicitly_wait(5)
+
     try:
+        # If we can find the accept cookies button, click it
         driver.find_element_by_id("onetrust-accept-btn-handler").click()
     except:
-        COOKIE = True 
+        cookie = False
+
     time.sleep(1)
+
     try:
-        GGANTAL = int(driver.find_element_by_xpath("//h1[contains(text(),'Søgeresultat for')]/following-sibling::span").get_attribute("innerHTML"))
-        diff = GGANTAL - db_antal 
+        gg_antal = int(driver.find_element_by_xpath("//h1[contains(text(),\
+        'Søgeresultat for')]/following-sibling::span").get_attribute("innerHTML"))
+
+        diff = gg_antal - db_antal
         if diff > 0:
-            string = str(GGANTAL) + " fundet på GulGratis.dk. " + str(diff) + "+ ift. forrige søgning."
-            print(str(GGANTAL) + " fundet. " + str(diff) + "+ ifh. forrige søgning")
+            # If diff is a positive number, we got new ads.
+            string = str(gg_antal) + " fundet på GulGratis.dk. " + \
+                str(diff) + "+ ift. forrige søgning."
+            print(str(gg_antal) + " fundet. " + str(diff) + \
+                  "+ ifh. forrige søgning")
             print("URL:" + driver.current_url)
             notification(string,title=PRODUCT)
-            pickle.dump(GGANTAL, open("/home/raske/Scripts/dba/data/" + remove(PRODUCT) + "_gg.dat", "wb")) # Dump the new number of items into the database
+            # Dump the new number of items into the database
+            pickle.dump(gg_antal, open("/home/raske/Scripts/dba/data/" + \
+                                       remove(PRODUCT) + "_gg.dat", "wb"))
         elif diff == 0:
             print("Ingen nye annoncer.")
             print("URL: " + driver.current_url)
         else:
-            print(GGANTAL + " fundet. " + str(diff) + " ift forrige søgning.")
+            print(gg_antal + " fundet. " + str(diff) + " ift forrige søgning.")
             print("URL:" + driver.current_url)
     except:
         print(PRODUCT + " ikke fundet i prisklassen.")
 
-filename = "/home/raske/Scripts/dba/search_agent.csv"
+def Lauritz_com():
+    """
+    Search lauritz.com for our products.
+    """
+    try: # See if we have any data on the given product else db antal is 0
+        db_antal = pickle.load(open("/home/raske/Scripts/dba/data/" + \
+                                    remove(PRODUCT) + "_l.dat", "rb"))
+    except:
+        db_antal = 0
+
+    driver.get("https://lauritz.com")
+    driver.implicitly_wait(5)
+    try:
+        driver.find_element_by_id("CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll").click()
+    except:
+        cookie = True
+
+    search = driver.find_element_by_id("SearchTextBox")
+    search.send_keys(PRODUCT)
+    search.send_keys(Keys.ENTER)
+    driver.implicitly_wait(5)
+    time.sleep(2)
+    if int(MAXPRICE)<=2000:
+        filter = driver.find_element_by_xpath("//option[contains(text(), 'Under 2,000 DKK')]")
+    elif int(MAXPRICE)<=5000:
+        filter = driver.find_element_by_xpath("//option[contains(text(), 'Under 5,000 DKK')]")
+    elif int(MAXPRICE)<=10000:
+        filter = driver.find_element_by_xpath("//option[contains(text(), 'Under 10,000 DKK')]")
+    elif int(MAXPRICE)<=20000:
+        filter = driver.find_element_by_xpath("//option[contains(text(), 'Under 20,000 DKK')]")
+    else:
+        filter = driver.find_element_by_tag_name("body")
+    filter.click()
+    time.sleep(2)
+    try:
+        antal_annoncer = driver.find_element_by_id("List_TotalItemCount")
+        antal_annoncer_string = antal_annoncer.get_attribute("innerHTML")
+        # Single out the integer
+        l_antal = [int(i) for i in antal_annoncer_string.split() if i.isdigit()]
+        diff = int(l_antal[0]) - db_antal
+        if diff > 0:
+            # If diff is a positive number, we got new ads.
+            string = str(l_antal[0]) + " fundet på GulGratis.dk. " + \
+                str(diff) + "+ ift. forrige søgning."
+            print(str(l_antal[0]) + " fundet. " + str(diff) + \
+                  "+ ifh. forrige søgning")
+            print("URL:" + driver.current_url)
+            notification(string,title=PRODUCT)
+            # Dump the new number of items into the database
+            pickle.dump(l_antal[0], open("/home/raske/Scripts/dba/data/" + \
+                                       remove(PRODUCT) + "_l.dat", "wb"))
+        elif diff == 0:
+            print("Ingen nye annoncer.")
+            print("URL: " + driver.current_url)
+        else:
+            print(int(l_antal[0]) + " fundet. " + str(diff) + " ift forrige søgning.")
+            print("URL:" + driver.current_url)
+            pickle.dum(l_antal[0], open("/home/raske/Scripts/dba/data/" + \
+                                     remove(PRODUCT) + "_l.dat", "wb"))
+    except:
+        print(PRODUCT + " ikke fundet i prisklassen.")
+
+
+
+# Full path to the CSV that holds out search terms, and min/max prices.
+FILE_NAME = "/home/raske/Scripts/dba/search_agent.csv"
 
 print("Søger...")
+print(datetime.datetime.now())
 print(" ")
-with open(filename, "r") as csvfile:
+with open(FILE_NAME, "r") as csvfile:
     datareader = csv.reader(csvfile)
+    # Run once for each line in our search agent csv file.
     for row in datareader:
         PRODUCT = row[0]
         PRICE = row[1]
         MAXPRICE = row[2]
+        # Printing output to std.out
         print("Produkt: " + PRODUCT)
         print("Pris: " + PRICE + "-" + MAXPRICE)
         print("- ")
         print("Den Blå Avis:")
-        den_blaa_avis()
+        den_blaa_avis() # Output from DBA.dk
         print("- ")
         print("Gul og Gratis: ")
-        gul_og_gratis()
+        gul_og_gratis() # Output from GulGratis.dk
+#        print("- ")
+#        print("Lauritz.com: ")
+#        Lauritz_com() # Output from Lauritz.com
         print(" ")
         print("-----------------------------------------")
         print(" ")
-        
+
+if cookie == True:
+    cookie = False
+else:
+    cookie = True
 driver.quit()
